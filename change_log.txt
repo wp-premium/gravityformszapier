@@ -1,0 +1,42 @@
+-------------------------------------------------------------------------------------------------------------------
+Version 1.4.2
+	- Fixed the functions used by the mwp_premium_update_notification and mwp_premium_perform_update hooks so that the new_version element in the array returns Zapier's version instead of Gravity Forms'
+
+-------------------------------------------------------------------------------------------------------------------
+Version 1.4.1
+	- Fixed strict notice thrown when viewing the list of Zaps for a form
+	- Updated to not send entries marked as spam to Zapier
+
+-------------------------------------------------------------------------------------------------------------------
+Version 1.4
+	- Added POT file.
+	- Added entry meta to field list.
+    - Added the gform_zapier_field_value hook so the value can be modified before sending to Zapier.
+	- Fixed issue where the anti-spam honeypot being active was causing data to not be passed to Zapier.
+	- Fixed notices.
+	
+-------------------------------------------------------------------------------------------------------------------
+Version 1.1
+    - Updated how multi-input fields (checkboxes, name, address) are handled so that users can map to the "parent" field (in addition to being able to map to the individual inputs).
+
+-------------------------------------------------------------------------------------------------------------------
+Version 1.0.beta2
+    - Fixed notices
+    - Added extra parameter to differentiate blank submissions from real submissions
+
+-------------------------------------------------------------------------------------------------------------------
+Version 1.0.beta1
+    - Fixed notices
+    - Fixed issue with zapier feed being created multiple times
+    - Fixed issue with conditional logic not displaying when creating a new feed
+
+-------------------------------------------------------------------------------------------------------------------
+Version 0.2
+	- Added conditional logic
+	- Updated column names
+	- Added instructional text on Settings page
+	- Added instructional text when adding a new feed
+
+-------------------------------------------------------------------------------------------------------------------
+Version 0.1
+    - Initial creation

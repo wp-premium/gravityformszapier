@@ -1,0 +1,216 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Gravity Forms Zapier Add-on\n"
+"POT-Creation-Date: 2013-08-19 14:31-0500\n"
+"PO-Revision-Date: 2013-08-19 14:31-0500\n"
+"Last-Translator: Dana Cobb <dana@rocketgenius.com>\n"
+"Language-Team: Rocketgenius <customerservice@rocketgenius.com>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.7\n"
+"X-Poedit-KeywordsList: _e;__\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SearchPath-0: ..\n"
+
+#: ../plugin-upgrade.php:54 ../zapier.php:678
+#, php-format
+msgid "View version %s Details"
+msgstr ""
+
+#: ../plugin-upgrade.php:73
+#, php-format
+msgid "Oops!! Something went wrong.%sPlease try again or %scontact us%s."
+msgstr ""
+
+#: ../zapier.php:116 ../zapier.php:146 ../zapier.php:243
+msgid "Zapier"
+msgstr ""
+
+#: ../zapier.php:142
+msgid "Zap deleted."
+msgstr ""
+
+#: ../zapier.php:170
+msgid "Zapier Feeds"
+msgstr ""
+
+#: ../zapier.php:171
+msgid "Add New"
+msgstr ""
+
+#: ../zapier.php:230
+#, php-format
+msgid "Zap saved successfully. %sBack to list.%s"
+msgstr ""
+
+#: ../zapier.php:238
+msgid "Zap could not be updated. Please enter all required information below."
+msgstr ""
+
+#: ../zapier.php:264 ../zapier.php:739 ../zapier.php:848
+msgid "Zap Name"
+msgstr ""
+
+#: ../zapier.php:275 ../zapier.php:740 ../zapier.php:849
+msgid "Webhook URL"
+msgstr ""
+
+#: ../zapier.php:286 ../zapier.php:741
+msgid "Active"
+msgstr ""
+
+#: ../zapier.php:292
+msgid "Yes"
+msgstr ""
+
+#: ../zapier.php:294
+msgid "No"
+msgstr ""
+
+#: ../zapier.php:300 ../zapier.php:742
+msgid "Conditional Logic"
+msgstr ""
+
+#: ../zapier.php:306
+msgid "Enable"
+msgstr ""
+
+#: ../zapier.php:311
+msgid "Send to Zapier if "
+msgstr ""
+
+#: ../zapier.php:315
+msgid "is"
+msgstr ""
+
+#: ../zapier.php:316
+msgid "is not"
+msgstr ""
+
+#: ../zapier.php:317
+msgid "greater than"
+msgstr ""
+
+#: ../zapier.php:318
+msgid "less than"
+msgstr ""
+
+#: ../zapier.php:319
+msgid "contains"
+msgstr ""
+
+#: ../zapier.php:320
+msgid "starts with"
+msgstr ""
+
+#: ../zapier.php:321
+msgid "ends with"
+msgstr ""
+
+#: ../zapier.php:326
+msgid ""
+"To create a condition, your form must have a field supported by conditional "
+"logic."
+msgstr ""
+
+#: ../zapier.php:336
+msgid "Save Zapier Feed"
+msgstr ""
+
+#: ../zapier.php:336
+msgid "Update Zapier Feed"
+msgstr ""
+
+#: ../zapier.php:413
+msgid "Enter value"
+msgstr ""
+
+#: ../zapier.php:615 ../zapier.php:618
+msgid "Uninstall Zapier Add-On"
+msgstr ""
+
+#: ../zapier.php:616
+msgid "Warning! This operation deletes ALL Zapier Feeds."
+msgstr ""
+
+#: ../zapier.php:618
+msgid ""
+"Warning! ALL Zapier Feeds will be deleted. This cannot be undone. \\'OK\\' "
+"to delete, \\'Cancel\\' to stop"
+msgstr ""
+
+#: ../zapier.php:671
+msgid "Gravity Forms "
+msgstr ""
+
+#: ../zapier.php:678
+msgid "There is a new version of Gravity Forms Zapier Add-On available."
+msgstr ""
+
+#: ../zapier.php:679
+#, php-format
+msgid ""
+"%sRegister%s your copy of Gravity Forms to receive access to automatic "
+"upgrades and support. Need a license key? %sPurchase one now%s."
+msgstr ""
+
+#: ../zapier.php:702
+msgid "You don't have adequate permission to uninstall the Zapier Add-On."
+msgstr ""
+
+#: ../zapier.php:739
+msgid ""
+"This is a friendly name so you know what Zap is run when this form is "
+"submitted."
+msgstr ""
+
+#: ../zapier.php:740
+msgid ""
+"This is the URL provided by Zapier when you created your Zap on their "
+"website. This is the location to which your form data will be submitted to "
+"Zapier for additional processing."
+msgstr ""
+
+#: ../zapier.php:741
+msgid ""
+"Check this box if you want your form submissions to be sent to Zapier for "
+"processing."
+msgstr ""
+
+#: ../zapier.php:742
+msgid ""
+"When Conditional Logic is enabled, submissions for this form will only be "
+"sent to Zapier when the condition is met. When disabled, all submissions for "
+"this form will be sent to Zapier."
+msgstr ""
+
+#: ../zapier.php:894
+#, php-format
+msgid "You currently don't have any Zapier Feeds, let's go %screate one%s"
+msgstr ""
+
+#: ../zapier.php:913
+msgid "Edit this item"
+msgstr ""
+
+#: ../zapier.php:913
+msgid "Edit"
+msgstr ""
+
+#: ../zapier.php:914
+msgid "Delete this item"
+msgstr ""
+
+#: ../zapier.php:914
+msgid "WARNING: You are about to delete this Zapier feed."
+msgstr ""
+
+#: ../zapier.php:914
+msgid "\\'Cancel\\' to stop, \\'OK\\' to delete."
+msgstr ""
+
+#: ../zapier.php:914
+msgid "Delete"
+msgstr ""
