@@ -1,11 +1,30 @@
 -------------------------------------------------------------------------------------------------------------------
-Version 1.4.2
-	- Fixed the functions used by the mwp_premium_update_notification and mwp_premium_perform_update hooks so that the new_version element in the array returns Zapier's version instead of Gravity Forms'
+Version 1.7.2
+    - Fixed an issue with a db table error occurring if the framework version of the PayPal add-on is not installed.
 
 -------------------------------------------------------------------------------------------------------------------
-Version 1.4.1
-	- Fixed strict notice thrown when viewing the list of Zaps for a form
-	- Updated to not send entries marked as spam to Zapier
+Version 1.7.1
+    - Fixed an issue with a db table error occurring if the PayPal add-on is not installed.
+
+-------------------------------------------------------------------------------------------------------------------
+Version 1.7
+    - Added text domain/path to header.
+    - Fixed an issue with multi-input fields and the dummy data sent to Zapier when first configuring a zap or updating the form.
+    - Fixed a low severity security vulnerability in the admin area which could be exploited by authenticated users with form administration permissions.
+    - Fixed an issue with conditional logic evaluation when processing feeds delayed by the PayPal Standard add-on.
+
+-------------------------------------------------------------------------------------------------------------------
+Version 1.6
+  	- Added Spanish (es_ES) translation.
+	- Added ability to delay sending to Zapier until a payment is received if PayPal Standard is also being used.
+	- Updated POT file.
+	- Updated to not send entries marked as spam to Zapier.
+    - Fixed an issue with the zap body being prepared even if the form does not have a feed.
+	- Fixed a warning for multi-row Likert fields when the zap body is being prepared.
+	- Fixed a warning related to how Gravity Forms 1.9 handles inputs for fields such Email, Date and Time.
+	- Fixed notice thrown when using extract in certain PHP versions.
+	- Fixed the functions used by the mwp_premium_update_notification and mwp_premium_perform_update hooks so that the new_version element in the array returns Zapier's version instead of Gravity Forms'.
+	- Fixed strict notice thrown when viewing the list of Zaps for a form.
 
 -------------------------------------------------------------------------------------------------------------------
 Version 1.4
