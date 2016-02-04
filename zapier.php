@@ -4,7 +4,7 @@
 Plugin Name: Gravity Forms Zapier Add-on
 Plugin URI: http://www.gravityforms.com
 Description: Integrates Gravity Forms with Zapier allowing form submissions to be automatically sent to your configured Zaps.
-Version: 1.7.2
+Version: 1.8
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 Text Domain: gravityformszapier
@@ -36,8 +36,8 @@ class GFZapier {
 	private static $slug = "gravityformszapier";
 	private static $path = "gravityformszapier/zapier.php";
     private static $url = "http://www.gravityforms.com";
-    private static $version = "1.7.2";
-    private static $min_gravityforms_version = "1.7.5";
+    private static $version = "1.8";
+    private static $min_gravityforms_version = "1.7.6";
 
 	public static function init(){
 
@@ -881,10 +881,9 @@ class GFZapier {
 			)
 		);
 
-		self::log_debug( __METHOD__ . '(): rule => ' . print_r( $logic['rules'][0], true ) );
-
+        $logic          = apply_filters( 'gform_zapier_feed_conditional_logic', $logic, $form, $zap );
 		$is_value_match = GFCommon::evaluate_conditional_logic( $logic, $form, $entry );
-		self::log_debug( __METHOD__ . '(): is value match? ' . var_export( $is_value_match, 1 ) );
+        self::log_debug( __METHOD__ . '(): Result: ' . var_export( $is_value_match, 1 ) );
 
 		return $is_value_match;
 	}
@@ -906,7 +905,7 @@ class GFZapier {
 	}
 
 	//These are functions copied from the add-on framework and modified as needed to support the PayPal delay
-	public function add_paypal_settings( $feed, $form ) {
+	public static function add_paypal_settings( $feed, $form ) {
 		//this function was copied from the feed framework since this add-on has not yet been migrated
 		$form_id        = rgar( $form, 'id' );
 		$feed_meta      = $feed['meta'];
@@ -960,13 +959,13 @@ class GFZapier {
 	<?php
 	}
 
-	public function save_paypal_settings( $feed ) {
+	public static function save_paypal_settings( $feed ) {
 		$feed['meta'][ 'delay_gravityformszapier' ] = rgpost( 'paypal_delay_gravityformszapier' );
 
 		return $feed;
 	}
 
-	public function get_paypal_feeds( $form_id = null ) {
+	public static function get_paypal_feeds( $form_id = null ) {
 		global $wpdb;
 
 		$table_name = $wpdb->prefix . 'gf_addon_feed';
@@ -989,7 +988,7 @@ class GFZapier {
 		return $results;
 	}
 
-	public function is_feed_condition_met( $feed, $form, $entry ) {
+	public static function is_feed_condition_met( $feed, $form, $entry ) {
 
 		$feed_meta            = $feed['meta'];
 		$is_condition_enabled = rgar( $feed_meta, 'feed_condition_conditional_logic' ) == true;
@@ -1002,13 +1001,13 @@ class GFZapier {
 		return GFCommon::evaluate_conditional_logic( $logic, $form, $entry );
 	}
 
-	public function is_delayed( $paypal_feed ){
+	public static function is_delayed( $paypal_feed ){
 		//look for delay in paypal feed specific to zapier add-on
 		$delay = rgar( $paypal_feed['meta'], 'delay_gravityformszapier' );
 		return $delay;
 	}
 
-	public function has_paypal_payment( $feed, $form, $entry ){
+	public static function has_paypal_payment( $feed, $form, $entry ){
 
 		$products = GFCommon::get_product_fields( $form, $entry );
 
@@ -1112,6 +1111,10 @@ class GFZapierTable extends WP_List_Table {
 
         parent::__construct();
     }
+
+	function get_columns() {
+		return $this->_column_headers[0];
+	}
 
     function prepare_items() {
     	//query db
