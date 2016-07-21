@@ -1,4 +1,21 @@
 -------------------------------------------------------------------------------------------------------------------
+Version 1.9
+    - Added support for sending the field admin label to Zapier, if available.
+    - Added GFZapier::process_feed( $feed, $entry, $form ) for processing a single feed.
+    - Updated to send the form title, entry id, entry date, user ip and source url.
+    - Updated minimum Gravity Forms version to 1.9.10.
+    - Updated to send dummy values to Zapier when saving the feed/form instead of empty values.
+    - Updated to skip display only fields when preparing the zap body array.
+    - Updated to use the field title when preparing the zap body if the field doesn't have a label.
+    - Updated minimum Gravity Forms version to 1.9.
+    - Updated to support Gravity Forms 2.0 changes to the PayPal Standard integration.
+    - Fixed an issue where field values in the body array would be overridden if another field used the same label.
+    - Fixed PHP notices on the edit feed page related to the conditional logic field and value settings.
+    - Fixed an issue with the feed conditional logic value drop down for choice based fields.
+    - Fixed GF_Field array access/object notation notice with Gravity Forms 2.0.
+    - Fixed an issue with the PayPal Standard integration.
+
+-------------------------------------------------------------------------------------------------------------------
 Version 1.8
     - Added the 'gform_zapier_feed_conditional_logic' filter enabling the feed conditional logic rule to be overridden during submission, allowing multiple rules to be defined.
         add_filter( 'gform_zapier_feed_conditional_logic', function( $logic, $form, $zap ) {
