@@ -1,4 +1,11 @@
 -------------------------------------------------------------------------------------------------------------------
+Version 2.0
+    - Added the gform_zapier_sample_field_value filter for overriding the sample data sent when configuring the zap or updating the form.
+    - Updated to format entry date.
+    - Fixed an issue with the 'Use Admin Labels' setting on new zaps appearing to reset when saving a valid zap.
+    - Fixed PHP warning which could occur if the multiselect field only had one choice configured.
+
+-------------------------------------------------------------------------------------------------------------------
 Version 1.9
     - Added support for sending the field admin label to Zapier, if available.
     - Added GFZapier::process_feed( $feed, $entry, $form ) for processing a single feed.

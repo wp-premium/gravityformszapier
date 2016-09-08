@@ -4,7 +4,7 @@
 Plugin Name: Gravity Forms Zapier Add-on
 Plugin URI: http://www.gravityforms.com
 Description: Integrates Gravity Forms with Zapier allowing form submissions to be automatically sent to your configured Zaps.
-Version: 1.9
+Version: 2.0
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 Text Domain: gravityformszapier
@@ -36,7 +36,7 @@ class GFZapier {
 	private static $slug = 'gravityformszapier';
 	private static $path = 'gravityformszapier/zapier.php';
 	private static $url = 'http://www.gravityforms.com';
-	private static $version = '1.9';
+	private static $version = '2.0';
 	private static $min_gravityforms_version = '1.9.10';
 
 	private static $_current_body = null;
@@ -275,7 +275,8 @@ class GFZapier {
 
 				if ( $is_new_zap || $is_update ) {
 					//send field info to zap when new or url has changed
-					$sent = self::send_form_data_to_zapier( '', $form );
+					$sent       = self::send_form_data_to_zapier( '', $form );
+					$is_new_zap = false;
 				}
 			} else {
 				GFCommon::add_error_message( __( 'Zap could not be updated. Please enter all required information below.', 'gravityformszapier' ) );
@@ -679,8 +680,18 @@ class GFZapier {
 
 		$entry_properties = self::get_entry_properties();
 		foreach ( $entry_properties as $property_key => $property_config ) {
-			$key          = self::get_body_key( $body, $property_config['label'] );
-			$body[ $key ] = $use_sample_value ? $property_config['sample_value'] : rgar( $entry, $property_key );
+			$key = self::get_body_key( $body, $property_config['label'] );
+
+			if ( $use_sample_value ) {
+				$value = $property_config['sample_value'];
+			} else {
+				$value = rgar( $entry, $property_key );
+				if ( $property_key == 'date_created' ) {
+					$value = GFCommon::format_date( $value, false );
+				}
+			}
+
+			$body[ $key ] = $value;
 		}
 
 		$entry_meta = GFFormsModel::get_entry_meta( $form['id'] );
@@ -706,6 +717,7 @@ class GFZapier {
 				$field_value = apply_filters( 'gform_zapier_field_value', $field_value, $form['id'], $field->id, $entry );
 			} else {
 				$field_value = self::get_sample_value( $field );
+				$field_value = apply_filters( 'gform_zapier_sample_field_value', $field_value, $form['id'], $field->id );
 			}
 
 			$field_label = self::get_body_label( $adminLabels, $field );
@@ -853,9 +865,10 @@ class GFZapier {
 				break;
 
 			case 'multiselect' :
-				$keys  = array_rand( $field->choices, 2 );
-				$value = rgar( $field->choices[ $keys[0] ], $choice_type );
-				$value .= ',' . rgar( $field->choices[ $keys[1] ], $choice_type );
+				$value = rgars( $field->choices, '0/' . $choice_type );
+				if ( isset( $field->choices[1] ) ) {
+					$value .= ',' . rgar( $field->choices[1], $choice_type );
+				}
 				break;
 
 			case 'number' :
