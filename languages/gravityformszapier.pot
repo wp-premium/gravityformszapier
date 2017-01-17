@@ -1,13 +1,13 @@
-# Copyright 2009-2016 Rocketgenius, Inc.
+# Copyright 2009-2017 Rocketgenius, Inc.
 msgid ""
 msgstr ""
-"Project-Id-Version: Gravity Forms Zapier Add-on 2.0\n"
+"Project-Id-Version: Gravity Forms Zapier Add-on 2.1\n"
 "Report-Msgid-Bugs-To: http://www.gravtiyhelp.com\n"
-"POT-Creation-Date: 2016-08-31 20:42:16+00:00\n"
+"POT-Creation-Date: 2017-01-05 19:26:38+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2016-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2017-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Rocketgenius <customerservice@rocketgenius.com>\n"
 "Language-Team: Rocketgenius <customerservice@rocketgenius.com>\n"
 "X-Generator: Gravity Forms Build Server\n"
@@ -24,7 +24,7 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8\n"
 "X-Textdomain-Support: yes\n"
 
-#: plugin-upgrade.php:54 zapier.php:1183
+#: plugin-upgrade.php:54 zapier.php:1217
 msgid "View version %s Details"
 msgstr ""
 
@@ -32,233 +32,254 @@ msgstr ""
 msgid "Oops!! Something went wrong.%sPlease try again or %scontact us%s."
 msgstr ""
 
-#: zapier.php:139 zapier.php:171 zapier.php:287
+#: zapier.php:140 zapier.php:172 zapier.php:288
 msgid "Zapier"
 msgstr ""
 
-#: zapier.php:167
+#: zapier.php:168
 msgid "Zap deleted."
 msgstr ""
 
-#: zapier.php:211
+#: zapier.php:212
 msgid "Zapier Feeds"
 msgstr ""
 
-#: zapier.php:213
+#: zapier.php:214
 msgid "Add New"
 msgstr ""
 
-#: zapier.php:274
+#: zapier.php:275
 msgid "Zap saved successfully. %sBack to list.%s"
 msgstr ""
 
-#: zapier.php:282
+#: zapier.php:283
 msgid "Zap could not be updated. Please enter all required information below."
 msgstr ""
 
-#: zapier.php:328 zapier.php:1246 zapier.php:1630
+#: zapier.php:320
+msgid ""
+"To create a new zap, you must have the Webhook URL. The Webhook URL may be "
+"found when you go to your %sZapier dashboard%s and create a new zap, or "
+"when you edit an existing zap. Once you have saved your new feed the form "
+"fields will be available for mapping on the Zapier site."
+msgstr ""
+
+#: zapier.php:329 zapier.php:1280 zapier.php:1664
 msgid "Zap Name"
 msgstr ""
 
-#: zapier.php:340 zapier.php:1247 zapier.php:1631
+#: zapier.php:341 zapier.php:1281 zapier.php:1665
 msgid "Webhook URL"
 msgstr ""
 
-#: zapier.php:352 zapier.php:1248
+#: zapier.php:353 zapier.php:1282
 msgid "Active"
 msgstr ""
 
-#: zapier.php:359 zapier.php:375
+#: zapier.php:360 zapier.php:376
 msgid "Yes"
 msgstr ""
 
-#: zapier.php:362 zapier.php:378
+#: zapier.php:363 zapier.php:379
 msgid "No"
 msgstr ""
 
-#: zapier.php:368 zapier.php:1250
+#: zapier.php:369 zapier.php:1284
 msgid "Use Admin Labels"
 msgstr ""
 
-#: zapier.php:384 zapier.php:1249
+#: zapier.php:385 zapier.php:1283
 msgid "Conditional Logic"
 msgstr ""
 
-#: zapier.php:392
+#: zapier.php:393
 msgid "Enable"
 msgstr ""
 
-#: zapier.php:398
+#: zapier.php:399
 msgid "Send to Zapier if "
 msgstr ""
 
-#: zapier.php:405
+#: zapier.php:406
 msgid "is"
 msgstr ""
 
-#: zapier.php:407
+#: zapier.php:408
 msgid "is not"
 msgstr ""
 
-#: zapier.php:409
+#: zapier.php:410
 msgid "greater than"
 msgstr ""
 
-#: zapier.php:411
+#: zapier.php:412
 msgid "less than"
 msgstr ""
 
-#: zapier.php:413
+#: zapier.php:414
 msgid "contains"
 msgstr ""
 
-#: zapier.php:415
+#: zapier.php:416
 msgid "starts with"
 msgstr ""
 
-#: zapier.php:417
+#: zapier.php:418
 msgid "ends with"
 msgstr ""
 
-#: zapier.php:423
+#: zapier.php:424
 msgid ""
 "To create a condition, your form must have a field supported by conditional "
 "logic."
 msgstr ""
 
-#: zapier.php:433
+#: zapier.php:434
 msgid "Save Zapier Feed"
 msgstr ""
 
-#: zapier.php:433
+#: zapier.php:434
 msgid "Update Zapier Feed"
 msgstr ""
 
-#: zapier.php:507
+#: zapier.php:508
 msgid "Enter value"
 msgstr ""
 
-#: zapier.php:679
+#: zapier.php:714
 msgid "Form Title"
 msgstr ""
 
-#: zapier.php:1039
+#: zapier.php:1074
 msgid "Entry ID"
 msgstr ""
 
-#: zapier.php:1043
+#: zapier.php:1078
 msgid "Entry Date"
 msgstr ""
 
-#: zapier.php:1047
+#: zapier.php:1082
 msgid "User IP"
 msgstr ""
 
-#: zapier.php:1051
+#: zapier.php:1086
 msgid "Source Url"
 msgstr ""
 
-#: zapier.php:1103
+#: zapier.php:1117
+msgid ""
+"Gravity Forms Zapier Add-On has been successfully uninstalled. It can be "
+"re-activated from the %splugins page%s."
+msgstr ""
+
+#: zapier.php:1132
+msgid ""
+"Zapier is a service to which you may submit your form data so that "
+"information may be passed along to another online service. If you do not "
+"have a Zapier account, you may %ssign up for one here%s."
+msgstr ""
+
+#: zapier.php:1138
 msgid "Uninstall Zapier Add-On"
 msgstr ""
 
-#: zapier.php:1108
+#: zapier.php:1143
 msgid "This operation deletes ALL Zapier feeds."
 msgstr ""
 
-#: zapier.php:1108
+#: zapier.php:1143
 msgid "If you continue, you will not be able to recover any Zapier data."
 msgstr ""
 
-#: zapier.php:1112
+#: zapier.php:1146
 msgid ""
-"Warning! ALL settings will be deleted. This cannot be undone. \\'OK\\' to "
-"delete, \\'Cancel\\' to stop"
+"Warning! ALL Zapier settings will be deleted. This cannot be undone. "
+"\\'OK\\' to delete, \\'Cancel\\' to stop"
 msgstr ""
 
-#: zapier.php:1183
+#: zapier.php:1217
 msgid "There is a new version of Gravity Forms Zapier Add-On available."
 msgstr ""
 
-#: zapier.php:1184
+#: zapier.php:1218
 msgid ""
 "%sRegister%s your copy of Gravity Forms to receive access to automatic "
 "upgrades and support. Need a license key? %sPurchase one now%s."
 msgstr ""
 
-#: zapier.php:1207
+#: zapier.php:1241
 msgid "You don't have adequate permission to uninstall the Zapier Add-On."
 msgstr ""
 
-#: zapier.php:1246
+#: zapier.php:1280
 msgid ""
 "This is a friendly name so you know what Zap is run when this form is "
 "submitted."
 msgstr ""
 
-#: zapier.php:1247
+#: zapier.php:1281
 msgid ""
 "This is the URL provided by Zapier when you created your Zap on their "
 "website. This is the location to which your form data will be submitted to "
 "Zapier for additional processing."
 msgstr ""
 
-#: zapier.php:1248
+#: zapier.php:1282
 msgid ""
 "Check this box if you want your form submissions to be sent to Zapier for "
 "processing."
 msgstr ""
 
-#: zapier.php:1249
+#: zapier.php:1283
 msgid ""
 "When Conditional Logic is enabled, submissions for this form will only be "
 "sent to Zapier when the condition is met. When disabled, all submissions "
 "for this form will be sent to Zapier."
 msgstr ""
 
-#: zapier.php:1250
+#: zapier.php:1284
 msgid ""
 "By default the field labels will be sent to Zapier. Enable this option to "
 "send the field admin labels when available."
 msgstr ""
 
-#: zapier.php:1372 zapier.php:1436
+#: zapier.php:1406 zapier.php:1470
 msgid "Send feed to Zapier only when payment is received."
 msgstr ""
 
-#: zapier.php:1387
+#: zapier.php:1421
 msgid "Post Payment Actions"
 msgstr ""
 
-#: zapier.php:1387
+#: zapier.php:1421
 msgid "Select which actions should only occur after payment has been received."
 msgstr ""
 
-#: zapier.php:1682
+#: zapier.php:1717
 msgid "You currently don't have any Zapier Feeds, let's go %screate one%s"
 msgstr ""
 
-#: zapier.php:1706
+#: zapier.php:1741
 msgid "Edit this item"
 msgstr ""
 
-#: zapier.php:1706
+#: zapier.php:1741
 msgid "Edit"
 msgstr ""
 
-#: zapier.php:1707
+#: zapier.php:1742
 msgid "Delete this item"
 msgstr ""
 
-#: zapier.php:1707
+#: zapier.php:1742
 msgid "WARNING: You are about to delete this Zapier feed."
 msgstr ""
 
-#: zapier.php:1707
+#: zapier.php:1742
 msgid "\\'Cancel\\' to stop, \\'OK\\' to delete."
 msgstr ""
 
-#: zapier.php:1707
+#: zapier.php:1742
 msgid "Delete"
 msgstr ""
 
@@ -272,7 +293,7 @@ msgstr ""
 
 #. Description of the plugin/theme
 msgid ""
-"Integrates Gravity Forms with Zapier allowing form submissions to be "
+"Integrates Gravity Forms with Zapier, allowing form submissions to be "
 "automatically sent to your configured Zaps."
 msgstr ""
 

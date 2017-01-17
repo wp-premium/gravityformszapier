@@ -3,8 +3,8 @@
 /*
 Plugin Name: Gravity Forms Zapier Add-on
 Plugin URI: http://www.gravityforms.com
-Description: Integrates Gravity Forms with Zapier allowing form submissions to be automatically sent to your configured Zaps.
-Version: 2.0
+Description: Integrates Gravity Forms with Zapier, allowing form submissions to be automatically sent to your configured Zaps.
+Version: 2.1
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 Text Domain: gravityformszapier
@@ -36,7 +36,7 @@ class GFZapier {
 	private static $slug = 'gravityformszapier';
 	private static $path = 'gravityformszapier/zapier.php';
 	private static $url = 'http://www.gravityforms.com';
-	private static $version = '2.0';
+	private static $version = '2.1';
 	private static $min_gravityforms_version = '1.9.10';
 
 	private static $_current_body = null;
@@ -72,7 +72,7 @@ class GFZapier {
 			add_action( 'install_plugins_pre_plugin-information', array( 'GFZapier', 'display_changelog' ) );
 
 			//add item to form settings menu in expand list
-			add_action( 'gform_form_settings_menu', array( 'GFZapier', 'add_form_settings_menu' ) );
+			add_action( 'gform_form_settings_menu', array( 'GFZapier', 'add_form_settings_menu' ), 50 );
 
 			//add action so that when form is updated, data fields are sent to Zapier
 			add_action( 'gform_after_save_form', array( 'GFZapier', 'send_form_updates' ), 10, 2 );
@@ -91,9 +91,10 @@ class GFZapier {
 			if ( RGForms::get( 'page' ) == 'gf_settings' ) {
 				//add Zapier link to settings tabs on GF Main Settings page
 				if ( self::has_access( 'gravityforms_zapier' ) ) {
-					RGForms::add_settings_page( 'Zapier', array(
+					RGForms::add_settings_page( array( 'name' => self::$slug, 'title' => 'Zapier Settings', 'tab_label' => 'Zapier', 'handler' => array(
 						'GFZapier',
 						'settings_page'
+					), ''
 					), self::get_base_url() . '/images/zapier_wordpress_icon_32.png' );
 				}
 			}
@@ -316,7 +317,7 @@ class GFZapier {
 			}
 		</style>
 		<div style="<?php echo $is_new_zap ? 'display:block' : 'display:none' ?>">
-			<?php _e( sprintf( 'To create a new zap, you must have the Webhook URL. The Webhook URL may be found when you go to your %sZapier dashboard%s and create a new zap, or when you edit an existing zap. Once you have saved your new feed the form fields will be available for mapping on the Zapier site.', "<a href='https://zapier.com/app/dashboard' target='_blank'>", '</a>' ) ); ?>
+			<?php echo sprintf( __( 'To create a new zap, you must have the Webhook URL. The Webhook URL may be found when you go to your %sZapier dashboard%s and create a new zap, or when you edit an existing zap. Once you have saved your new feed the form fields will be available for mapping on the Zapier site.', 'gravityformszapier' ), "<a href='https://zapier.com/app/dashboard' target='_blank'>", '</a>' ) ; ?>
 		</div>
 		<form method="post" id="gform_zapier_form">
 			<?php wp_nonce_field( 'gforms_save_zap', 'gforms_save_zap' ) ?>
@@ -577,27 +578,13 @@ class GFZapier {
 			return false;
 		}
 
-		$is_entry = ! empty( $entry );
+		$is_entry   = ! empty( $entry );
+		$is_delayed = $is_entry && self::maybe_delay_feed( $entry, $form );
 
-		//see if there is a paypal feed and zapier is set to be delayed until payment is received
-		if ( $is_entry && class_exists( 'GFPayPal' ) ) {
-			$paypal_feeds = self::get_paypal_feeds( $form['id'] );
-			//loop through paypal feeds to get active one for this form submission, needed to see if add-on processing should be delayed
-			foreach ( $paypal_feeds as $paypal_feed ) {
-				if ( $paypal_feed['is_active'] && self::is_feed_condition_met( $paypal_feed, $form, $entry ) ) {
-					$active_paypal_feed = $paypal_feed;
-					break;
-				}
-			}
+		if ( $is_delayed ) {
+			self::log_debug( 'Zapier Feed processing is delayed, not processing feed for entry #' . $entry['id'] );
 
-			$is_fulfilled = rgar( $entry, 'is_fulfilled' );
-
-
-			if ( ! empty( $active_paypal_feed ) && self::is_delayed( $active_paypal_feed ) && self::has_paypal_payment( $active_paypal_feed, $form, $entry ) && ! $is_fulfilled ) {
-				self::log_debug( 'Zapier Feed processing is delayed pending payment, not processing feed for entry #' . $entry['id'] );
-
-				return false;
-			}
+			return false;
 		}
 
 		//do not send spam entries to zapier
@@ -627,6 +614,54 @@ class GFZapier {
 		}
 
 		return $retval;
+	}
+
+	/**
+	 * Determines if feed processing is delayed by the PayPal Standard Add-On.
+	 *
+	 * Also enables use of the gform_is_delayed_pre_process_feed filter.
+	 *
+	 * @param array $entry The Entry Object currently being processed.
+	 * @param array $form The Form Object currently being processed.
+	 *
+	 * @since 2.0.2
+	 *
+	 * @return bool
+	 */
+	public static function maybe_delay_feed( $entry, $form ) {
+		$is_delayed = false;
+		$slug       = self::$slug;
+
+		// See if there is a paypal feed and zapier is set to be delayed until payment is received.
+		if ( class_exists( 'GFPayPal' ) ) {
+			$paypal_feeds = self::get_paypal_feeds( $form['id'] );
+			// Loop through paypal feeds to get active one for this form submission, needed to see if add-on processing should be delayed.
+			foreach ( $paypal_feeds as $paypal_feed ) {
+				if ( $paypal_feed['is_active'] && self::is_feed_condition_met( $paypal_feed, $form, $entry ) ) {
+					$active_paypal_feed = $paypal_feed;
+					break;
+				}
+			}
+
+			$is_fulfilled = rgar( $entry, 'is_fulfilled' );
+
+			if ( ! empty( $active_paypal_feed ) && self::is_delayed( $active_paypal_feed ) && self::has_paypal_payment( $active_paypal_feed, $form, $entry ) && ! $is_fulfilled ) {
+				$is_delayed = true;
+			}
+		}
+
+		/**
+		 * Allow feed processing to be delayed.
+		 *
+		 * @param bool $is_delayed Is feed processing delayed?
+		 * @param array $form The Form Object currently being processed.
+		 * @param array $entry The Entry Object currently being processed.
+		 * @param string $slug The Add-On slug e.g. gravityformszapier
+		 */
+		$is_delayed = apply_filters( 'gform_is_delayed_pre_process_feed', $is_delayed, $form, $entry, $slug );
+		$is_delayed = apply_filters( 'gform_is_delayed_pre_process_feed_' . $form['id'], $is_delayed, $form, $entry, $slug );
+
+		return $is_delayed;
 	}
 
 	public static function process_feed( $feed, $entry, $form ) {
@@ -1079,7 +1114,7 @@ class GFZapier {
 
 			?>
 			<div class="updated fade"
-			     style="padding:20px;"><?php _e( sprintf( 'Gravity Forms Zapier Add-On has been successfully uninstalled. It can be re-activated from the %splugins page%s.', "<a href='plugins.php'>", '</a>' ), 'gravityformszapier' ) ?></div>
+			     style="padding:20px;"><?php echo sprintf( __( 'Gravity Forms Zapier Add-On has been successfully uninstalled. It can be re-activated from the %splugins page%s.', 'gravityformszapier' ), "<a href='plugins.php'>", '</a>' ) ?></div>
 			<?php
 			return;
 		}
@@ -1094,7 +1129,7 @@ class GFZapier {
 			}
 		</style>
 		<p style="text-align: left;">
-			<?php _e( sprintf( 'Zapier is a service to which you may submit your form data so that information may be passed along to another online service. If you do not have a Zapier account, you may %ssign up for one here%s.', "<a href='https://zapier.com/app/signup' target='_blank'>", "</a>" ), 'gravityformszapier' ) ?>
+			<?php echo sprintf( __( 'Zapier is a service to which you may submit your form data so that information may be passed along to another online service. If you do not have a Zapier account, you may %ssign up for one here%s.', 'gravityformszapier' ), "<a href='https://zapier.com/app/signup' target='_blank'>", "</a>" ) ?>
 		</p>
 		<br/></br>
 		<form action="" method="post">
@@ -1107,9 +1142,8 @@ class GFZapier {
 					<div class="gf_delete_notice"
 					"=""><strong><?php _e( 'This operation deletes ALL Zapier feeds.', 'gravityformszapier' ) ?></strong><?php _e( 'If you continue, you will not be able to recover any Zapier data.', 'gravityformszapier' ) ?>
 				</div>
-
 				<input type="submit" name="uninstall" value="Uninstall Zapier Add-on" class="button"
-				       onclick="return confirm('<?php _e( "Warning! ALL settings will be deleted. This cannot be undone. \'OK\' to delete, \'Cancel\' to stop", 'gravityformszapier' ) ?>');">
+				       onclick="return confirm('<?php _e( "Warning! ALL Zapier settings will be deleted. This cannot be undone. \'OK\' to delete, \'Cancel\' to stop", 'gravityformszapier' ) ?>');">
 				</div>
 			<?php } ?>
 		</form>
@@ -1631,7 +1665,8 @@ class GFZapierTable extends WP_List_Table {
 				'url'  => __( 'Webhook URL', 'gravityformszapier' )
 			),
 			array(),
-			array()
+			array(),
+			'name',
 		);
 
 		parent::__construct();
