@@ -1,4 +1,11 @@
 -------------------------------------------------------------------------------------------------------------------
+Version 2.1
+    - Added support for the gform_is_delayed_pre_process_feed filter.
+	- Updated strings for translations.
+    - Updated Zapier Feeds table to be responsive.
+	- Fixed issue where Zapier did not appear alphabetical in the Settings list.
+
+-------------------------------------------------------------------------------------------------------------------
 Version 2.0
     - Added the gform_zapier_sample_field_value filter for overriding the sample data sent when configuring the zap or updating the form.
     - Updated to format entry date.
