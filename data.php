@@ -1,6 +1,21 @@
 <?php
 class GFZapierData{
 
+	/**
+	 * Gets called when Gravity Forms upgrade process is completed.
+	 *
+	 * @since 2.1.2
+	 *
+	 * @param string $db_version          The current Gravity Forms database version.
+	 * @param string $previous_db_version The previous Gravity Forms database version.
+	 * @param bool   $force_upgrade       Is the upgrade being forced? i.e. from the link on the system status page.
+	 */
+	public static function post_gravityforms_upgrade( $db_version, $previous_db_version, $force_upgrade ) {
+		if ( $force_upgrade ) {
+			self::update_table();
+		}
+	}
+
     public static function update_table(){
         global $wpdb;
         $table_name = self::get_zapier_table_name();
