@@ -2,11 +2,12 @@
 
 /*
 Plugin Name: Gravity Forms Zapier Add-on
-Plugin URI: http://www.gravityforms.com
+Plugin URI: https://www.gravityforms.com
 Description: Integrates Gravity Forms with Zapier, allowing form submissions to be automatically sent to your configured Zaps.
-Version: 2.1
+Version: 3.0
 Author: rocketgenius
-Author URI: http://www.rocketgenius.com
+Author URI: https://www.rocketgenius.com
+License: GPL-2.0+
 Text Domain: gravityformszapier
 Domain Path: /languages
 
@@ -35,8 +36,8 @@ class GFZapier {
 
 	private static $slug = 'gravityformszapier';
 	private static $path = 'gravityformszapier/zapier.php';
-	private static $url = 'http://www.gravityforms.com';
-	private static $version = '2.1';
+	private static $url = 'https://www.gravityforms.com';
+	private static $version = '3.0';
 	private static $min_gravityforms_version = '1.9.10';
 
 	private static $_current_body = null;
@@ -81,20 +82,25 @@ class GFZapier {
 			if ( self::is_gravityforms_supported( '2.0-beta-2' ) ) {
 				add_filter( 'gform_gravityformspaypal_feed_settings_fields', array(
 					'GFZapier',
-					'add_paypal_post_payment_actions'
+					'add_paypal_post_payment_actions',
 				), 10, 2 );
 			} else {
 				add_action( 'gform_paypal_action_fields', array( 'GFZapier', 'add_paypal_settings' ), 10, 2 );
 				add_filter( 'gform_paypal_save_config', array( 'GFZapier', 'save_paypal_settings' ) );
 			}
 
-			if ( RGForms::get( 'page' ) == 'gf_settings' ) {
+			if ( GFForms::get( 'page' ) == 'gf_settings' ) {
 				//add Zapier link to settings tabs on GF Main Settings page
 				if ( self::has_access( 'gravityforms_zapier' ) ) {
-					RGForms::add_settings_page( array( 'name' => self::$slug, 'title' => 'Zapier Settings', 'tab_label' => 'Zapier', 'handler' => array(
-						'GFZapier',
-						'settings_page'
-					), ''
+					GFForms::add_settings_page( array(
+						'name'      => self::$slug,
+						'title'     => 'Zapier Settings',
+						'tab_label' => 'Zapier',
+						'handler'   => array(
+							'GFZapier',
+							'settings_page',
+						),
+						'',
 					), self::get_base_url() . '/images/zapier_wordpress_icon_32.png' );
 				}
 			}
@@ -114,6 +120,10 @@ class GFZapier {
 
 			}
 
+			// Gravity Forms 2.2+ System Status
+			add_action( 'gform_post_upgrade', array( 'GFZapierData', 'post_gravityforms_upgrade' ), 10, 3 );
+			add_filter( 'gform_system_report', array( 'GFZapier', 'system_report' ) );
+
 			//runs the setup when version changes
 			self::setup();
 
@@ -121,24 +131,24 @@ class GFZapier {
 			// ManageWP premium update filters
 			add_filter( 'mwp_premium_update_notification', array( 'GFZapier', 'premium_update_push' ) );
 			add_filter( 'mwp_premium_perform_update', array( 'GFZapier', 'premium_update' ) );
-
-			add_action( 'gform_after_submission', array( 'GFZapier', 'send_form_data_to_zapier' ), 10, 2 );
-
-			//handling paypal fulfillment
-			add_action( 'gform_paypal_fulfillment', array( 'GFZapier', 'paypal_fulfillment' ), 10, 4 );
 		}
 
 		//integrating with Members plugin
 		if ( function_exists( 'members_get_capabilities' ) ) {
 			add_filter( 'members_get_capabilities', array( 'GFZapier', 'members_get_capabilities' ) );
 		}
+
+		add_action( 'gform_after_submission', array( 'GFZapier', 'send_form_data_to_zapier' ), 10, 2 );
+
+		//handling paypal fulfillment
+		add_action( 'gform_paypal_fulfillment', array( 'GFZapier', 'paypal_fulfillment' ), 10, 4 );
 	}
 
 	public static function add_form_settings_menu( $tabs ) {
 		$tabs[] = array(
 			'name'  => self::$slug,
 			'label' => __( 'Zapier', 'gravityforms' ),
-			'query' => array( 'zid' => null )
+			'query' => array( 'zid' => null ),
 		);
 
 		return $tabs;
@@ -149,6 +159,11 @@ class GFZapier {
 		$form_id = RGForms::get( 'id' );
 
 		$zapier_id = rgempty( 'gform_zap_id' ) ? rgget( 'zid' ) : rgpost( 'gform_zap_id' );
+
+		if ( ! empty( $zapier_id ) ) {
+			$zapier_id = absint( $zapier_id );
+		}
+
 
 		if ( ! rgblank( $zapier_id ) ) {
 			self::zapier_edit_page( $form_id, $zapier_id );
@@ -208,11 +223,13 @@ class GFZapier {
 		<?php
 		$add_new_url = add_query_arg( array( 'zid' => 0 ) );
 		?>
-		<h3><span>
-            <?php _e( 'Zapier Feeds', 'gravityforms' ) ?>
+		<h3>
+			<span>
+				<?php esc_html_e( 'Zapier Feeds', 'gravityforms' ) ?>
 				<a id="add-new-zapier" class="add-new-h2"
-				   href="<?php echo esc_url( $add_new_url ); ?>"><?php _e( 'Add New', 'gravityformszapier' ) ?></a>
-        </span></h3>
+				   href="<?php echo esc_url( $add_new_url ); ?>"><?php esc_html_e( 'Add New', 'gravityformszapier' ) ?></a>
+			</span>
+		</h3>
 
 		<?php
 		$zapier_table = new GFZapierTable( $form_id );
@@ -252,16 +269,21 @@ class GFZapier {
 				$is_update = true;
 			}
 
-			$zap['name']      = rgpost( 'gform_zapier_name' );
-			$zap['url']       = rgpost( 'gform_zapier_url' );
-			$zap['is_active'] = rgpost( 'gform_zapier_active' );
-			//conditional
-			$zap['meta']['zapier_conditional_enabled']  = rgpost( 'gf_zapier_conditional_enabled' );
-			$zap['meta']['zapier_conditional_field_id'] = rgpost( 'gf_zapier_conditional_field_id' );
-			$zap['meta']['zapier_conditional_operator'] = rgpost( 'gf_zapier_conditional_operator' );
-			$zap['meta']['zapier_conditional_value']    = rgpost( 'gf_zapier_conditional_value' );
+			$zap['name']      = sanitize_text_field( rgpost( 'gform_zapier_name' ) );
+			$zap['url']       = esc_url_raw( rgpost( 'gform_zapier_url' ) );
+			$zap['is_active'] = rgpost( 'gform_zapier_active' ) ? '1' : '0';
 
-			$zap['meta']['adminLabels'] = rgpost( 'gform_zapier_admin_labels' );
+			//conditional
+			$zap['meta']['zapier_conditional_enabled']  = rgpost( 'gf_zapier_conditional_enabled' ) ? '1' : '0';
+			$zap['meta']['zapier_conditional_field_id'] = absint( rgpost( 'gf_zapier_conditional_field_id' ) );
+
+			$posted_logic_operator = rgpost( 'gf_zapier_conditional_operator' );
+			if ( ! in_array( $posted_logic_operator, array( 'is', 'isnot', '>', '<', 'contains', 'starts_with', 'ends_with' ) ) ) {
+				$posted_logic_operator = 'is';
+			}
+			$zap['meta']['zapier_conditional_operator'] = $posted_logic_operator;
+			$zap['meta']['zapier_conditional_value']    = wp_strip_all_tags( rgpost( 'gf_zapier_conditional_value' ) );
+			$zap['meta']['adminLabels'] = rgpost( 'gform_zapier_admin_labels' ) ? '1' : '0';
 
 			if ( empty( $zap['url'] ) || empty( $zap['name'] ) ) {
 				$is_valid = false;
@@ -282,7 +304,6 @@ class GFZapier {
 			} else {
 				GFCommon::add_error_message( __( 'Zap could not be updated. Please enter all required information below.', 'gravityformszapier' ) );
 			}
-
 		}
 
 		GFFormSettings::page_header( __( 'Zapier', 'gravityformszapier' ) );
@@ -317,16 +338,16 @@ class GFZapier {
 			}
 		</style>
 		<div style="<?php echo $is_new_zap ? 'display:block' : 'display:none' ?>">
-			<?php echo sprintf( __( 'To create a new zap, you must have the Webhook URL. The Webhook URL may be found when you go to your %sZapier dashboard%s and create a new zap, or when you edit an existing zap. Once you have saved your new feed the form fields will be available for mapping on the Zapier site.', 'gravityformszapier' ), "<a href='https://zapier.com/app/dashboard' target='_blank'>", '</a>' ) ; ?>
+			<?php echo sprintf( __( 'To create a new zap, you must have the Webhook URL. The Webhook URL may be found when you go to your %sZapier dashboard%s and create a new zap, or when you edit an existing zap. Once you have saved your new feed the form fields will be available for mapping on the Zapier site.', 'gravityformszapier' ), "<a href='https://zapier.com/app/dashboard' target='_blank'>", '</a>' ); ?>
 		</div>
 		<form method="post" id="gform_zapier_form">
 			<?php wp_nonce_field( 'gforms_save_zap', 'gforms_save_zap' ) ?>
-			<input type="hidden" id="gform_zap_id" name="gform_zap_id" value="<?php echo $zap_id ?>"/>
+			<input type="hidden" id="gform_zap_id" name="gform_zap_id" value="<?php echo absint( $zap_id ) ?>"/>
 			<table class="form-table">
 				<tr valign="top">
 					<th scope="row">
 						<label for="gform_zapier_name">
-							<?php _e( 'Zap Name', 'gravityformszapier' ); ?><span class="gfield_required">*</span>
+							<?php esc_html_e( 'Zap Name', 'gravityformszapier' ); ?><span class="gfield_required">*</span>
 							<?php gform_tooltip( 'zapier_name' ) ?>
 						</label>
 					</th>
@@ -338,51 +359,51 @@ class GFZapier {
 				<tr valign="top">
 					<th scope="row">
 						<label for="gform_zapier_url">
-							<?php _e( 'Webhook URL', 'gravityformszapier' ); ?><span class="gfield_required">*</span>
+							<?php esc_html_e( 'Webhook URL', 'gravityformszapier' ); ?><span class="gfield_required">*</span>
 							<?php gform_tooltip( 'zapier_url' ) ?>
 						</label>
 					</th>
 					<td>
 						<input type="text" class="fieldwidth-2" name="gform_zapier_url" id="gform_zapier_url"
-						       value="<?php echo esc_attr( rgar( $zap, 'url' ) ) ?>"/>
+						       value="<?php echo esc_url( rgar( $zap, 'url' ) ) ?>"/>
 					</td>
 				</tr>
 				<tr valign="top">
 					<th scope="row">
 						<label for="gform_zapier_active">
-							<?php _e( 'Active', 'gravityformszapier' ); ?>
+							<?php esc_html_e( 'Active', 'gravityformszapier' ); ?>
 							<?php gform_tooltip( 'zapier_active' ) ?>
 						</label>
 					</th>
 					<td>
 						<input type="radio" id="form_active_yes"
 						       name="gform_zapier_active" <?php checked( $feed_active, 1 ); ?> value="1"/>
-						<label for="form_active_yes" class="inline"><?php _e( 'Yes', 'gravityformszapier' ) ?></label>
+						<label for="form_active_yes" class="inline"><?php esc_html_e( 'Yes', 'gravityformszapier' ) ?></label>
 						<input type="radio" id="form_active_no"
 						       name="gform_zapier_active" <?php checked( $feed_active, 0 ); ?> value="0"/>
-						<label for="form_active_no" class="inline"><?php _e( 'No', 'gravityformszapier' ) ?></label>
+						<label for="form_active_no" class="inline"><?php esc_html_e( 'No', 'gravityformszapier' ) ?></label>
 					</td>
 				</tr>
 				<tr valign="top">
 					<th scope="row">
 						<label for="gform_zapier_admin_labels">
-							<?php _e( 'Use Admin Labels', 'gravityformszapier' ); ?>
+							<?php esc_html_e( 'Use Admin Labels', 'gravityformszapier' ); ?>
 							<?php gform_tooltip( 'zapier_labels' ) ?>
 						</label>
 					</th>
 					<td>
 						<input type="radio" id="admin_labels_yes"
 						       name="gform_zapier_admin_labels" <?php checked( $admin_labels, 1 ); ?> value="1"/>
-						<label for="admin_labels_yes" class="inline"><?php _e( 'Yes', 'gravityformszapier' ) ?></label>
+						<label for="admin_labels_yes" class="inline"><?php esc_html_e( 'Yes', 'gravityformszapier' ) ?></label>
 						<input type="radio" id="admin_labels_no"
 						       name="gform_zapier_admin_labels" <?php checked( $admin_labels, 0 ); ?> value="0"/>
-						<label for="admin_labels_no" class="inline"><?php _e( 'No', 'gravityformszapier' ) ?></label>
+						<label for="admin_labels_no" class="inline"><?php esc_html_e( 'No', 'gravityformszapier' ) ?></label>
 					</td>
 				</tr>
 				<tr valign="top">
 					<th scope="row">
 						<label for="gform_zapier_conditional_logic">
-							<?php _e( 'Conditional Logic', 'gravityforms' ) ?>
+							<?php esc_html_e( 'Conditional Logic', 'gravityforms' ) ?>
 							<?php gform_tooltip( 'zapier_conditional' ) ?>
 						</label>
 					</th>
@@ -390,38 +411,38 @@ class GFZapier {
 						<input type="checkbox" id="gf_zapier_conditional_enabled" name="gf_zapier_conditional_enabled"
 						       value="1"
 						       onclick="if(this.checked){jQuery('#gf_zapier_conditional_container').fadeIn('fast');} else{ jQuery('#gf_zapier_conditional_container').fadeOut('fast'); }" <?php checked( rgars( $zap, 'meta/zapier_conditional_enabled' ), 1 ); ?>/>
-						<label for="gf_zapier_conditional_enable"><?php _e( 'Enable', 'gravityformszapier' ); ?></label>
+						<label for="gf_zapier_conditional_enable"><?php esc_html_e( 'Enable', 'gravityformszapier' ); ?></label>
 						<br/>
 						<div style="height:20px;">
 							<div
 								id="gf_zapier_conditional_container" <?php echo ! rgars( $zap, 'meta/zapier_conditional_enabled' ) ? "style='display:none'" : '' ?>>
 								<div id="gf_zapier_conditional_fields" style="display:none;">
-									<?php _e( 'Send to Zapier if ', 'gravityformszapier' ) ?>
+									<?php esc_html_e( 'Send to Zapier if ', 'gravityformszapier' ) ?>
 
 									<select id="gf_zapier_conditional_field_id" name="gf_zapier_conditional_field_id"
 									        class="optin_select"
 									        onchange='jQuery("#gf_zapier_conditional_value_container").html(GetFieldValues(jQuery(this).val(), "", 20));'></select>
 									<select id="gf_zapier_conditional_operator" name="gf_zapier_conditional_operator">
 										<option
-											value="is" <?php selected( $logic_operator, 'is' ); ?>><?php _e( 'is', 'gravityformszapier' ) ?></option>
+											value="is" <?php selected( $logic_operator, 'is' ); ?>><?php esc_html_e( 'is', 'gravityformszapier' ) ?></option>
 										<option
-											value="isnot" <?php selected( $logic_operator, 'isnot' ); ?>><?php _e( 'is not', 'gravityformszapier' ) ?></option>
+											value="isnot" <?php selected( $logic_operator, 'isnot' ); ?>><?php esc_html_e( 'is not', 'gravityformszapier' ) ?></option>
 										<option
-											value=">" <?php selected( $logic_operator, '>' ); ?>><?php _e( 'greater than', 'gravityformszapier' ) ?></option>
+											value=">" <?php selected( $logic_operator, '>' ); ?>><?php esc_html_e( 'greater than', 'gravityformszapier' ) ?></option>
 										<option
-											value="<" <?php selected( $logic_operator, '<' ); ?>><?php _e( 'less than', 'gravityformszapier' ) ?></option>
+											value="<" <?php selected( $logic_operator, '<' ); ?>><?php esc_html_e( 'less than', 'gravityformszapier' ) ?></option>
 										<option
-											value="contains" <?php selected( $logic_operator, 'contains' ); ?>><?php _e( 'contains', 'gravityformszapier' ) ?></option>
+											value="contains" <?php selected( $logic_operator, 'contains' ); ?>><?php esc_html_e( 'contains', 'gravityformszapier' ) ?></option>
 										<option
-											value="starts_with" <?php selected( $logic_operator, 'starts_with' ); ?>><?php _e( 'starts with', 'gravityformszapier' ) ?></option>
+											value="starts_with" <?php selected( $logic_operator, 'starts_with' ); ?>><?php esc_html_e( 'starts with', 'gravityformszapier' ) ?></option>
 										<option
-											value="ends_with" <?php selected( $logic_operator, 'ends_with' ); ?>><?php _e( 'ends with', 'gravityformszapier' ) ?></option>
+											value="ends_with" <?php selected( $logic_operator, 'ends_with' ); ?>><?php esc_html_e( 'ends with', 'gravityformszapier' ) ?></option>
 									</select>
 									<div id="gf_zapier_conditional_value_container"
 									     name="gf_zapier_conditional_value_container" style="display:inline;"></div>
 								</div>
 								<div id="gf_zapier_conditional_message" style="display:none">
-									<?php _e( 'To create a condition, your form must have a field supported by conditional logic.', 'gravityformzapier' ) ?>
+									<?php esc_html_e( 'To create a condition, your form must have a field supported by conditional logic.', 'gravityformzapier' ) ?>
 								</div>
 							</div>
 						</div>
@@ -445,13 +466,13 @@ class GFZapier {
 		<script type="text/javascript">
 			// Conditional Functions
 
-			// initilize form object
+			// initialize form object
 			form = <?php echo GFCommon::json_encode( $form )?> ;
 
 			// initializing registration condition drop downs
 			jQuery(document).ready(function () {
-				var selectedField = "<?php echo str_replace( '"', '\"', rgars( $zap, 'meta/zapier_conditional_field_id' ) )?>";
-				var selectedValue = "<?php echo str_replace( '"', '\"', rgars( $zap, 'meta/zapier_conditional_value' ) )?>";
+				var selectedField = <?php echo json_encode( absint( rgars( $zap, 'meta/zapier_conditional_field_id' ) ) ); ?>;
+				var selectedValue = <?php echo json_encode( rgars( $zap, 'meta/zapier_conditional_value' ) )?>;
 				SetCondition(selectedField, selectedValue);
 			});
 
@@ -505,7 +526,7 @@ class GFZapier {
 				else {
 					selectedValue = selectedValue ? selectedValue.replace(/'/g, "&#039;") : "";
 					//create a text field for fields that don't have choices (i.e text, textarea, number, email, etc...)
-					str += "<input type='text' placeholder='<?php _e( 'Enter value', 'gravityforms' ); ?>' id='gf_zapier_conditional_value' name='gf_zapier_conditional_value' value='" + selectedValue.replace(/'/g, "&#039;") + "'>";
+					str += "<input type='text' placeholder='<?php esc_attr_e( 'Enter value', 'gravityforms' ); ?>' id='gf_zapier_conditional_value' name='gf_zapier_conditional_value' value='" + selectedValue.replace(/'/g, "&#039;") + "'>";
 				}
 
 				return str;
@@ -530,7 +551,7 @@ class GFZapier {
 			}
 
 			function GetSelectableFields(selectedFieldId, labelMaxCharacters) {
-				var str = '';
+				var str = '', fieldLabel;
 				var inputType;
 				for (var i = 0; i < form.fields.length; i++) {
 					fieldLabel = form.fields[i].adminLabel ? form.fields[i].adminLabel : form.fields[i].label;
@@ -544,7 +565,7 @@ class GFZapier {
 			}
 
 			function IsConditionalLogicField(field) {
-				inputType = field.inputType ? field.inputType : field.type;
+				var inputType = field.inputType ? field.inputType : field.type;
 				var supported_fields = ['checkbox', 'radio', 'select', 'text', 'website', 'textarea', 'email', 'hidden', 'number', 'phone', 'multiselect', 'post_title', 'post_tags', 'post_custom_field', 'post_content', 'post_excerpt'];
 
 				var index = jQuery.inArray(inputType, supported_fields);
@@ -701,7 +722,20 @@ class GFZapier {
 	}
 
 	public static function get_body( $entry, $form, $feed = false ) {
-		$current_body = self::$_current_body;
+
+		/**
+		 * Determines if the Zapier add-on should use the body already stored.
+		 *
+		 * @since 2.1.1
+		 *
+		 * @param bool  true   If the current body should be used. Defaults to true.
+		 * @param array $entry The Entry Object.
+		 * @param array $form  The Form Object.
+		 * @param array $feed  The Feed Object.
+		 */
+		if ( apply_filters( 'gform_zapier_use_stored_body', true, $entry, $form, $feed ) ) {
+			$current_body = self::$_current_body;
+		}
 
 		if ( is_array( $current_body ) ) {
 			return $current_body;
@@ -778,7 +812,6 @@ class GFZapier {
 					}
 				}
 
-
 				//Also adding an item for the "whole" field, which will be a concatenation of the individual inputs
 				switch ( $input_type ) {
 					case 'checkbox' :
@@ -793,10 +826,106 @@ class GFZapier {
 						$key          = self::get_body_key( $body, $field_label );
 						$body[ $key ] = implode( ' ', $non_blank_items );
 						break;
+
+					case 'calculation':
+					case 'hiddenproduct':
+					case 'singleproduct':
+						if ( $use_sample_value ) {
+							$name     = rgar( $field_value, $field->id . '.1' );
+							$price    = rgar( $field_value, $field->id . '.2' );
+							$quantity = rgar( $field_value, $field->id . '.3' );
+
+							$body['Products /'][] = array(
+								'product_id'                 => $field->id,
+								'product_name'               => $name,
+								'product_quantity'           => $quantity,
+								'product_price'              => $price,
+								'product_price_with_options' => $price + 10 + 20,
+								'product_subtotal'           => ( $price + 10 + 20 ) * $quantity,
+								'product_options'            => 'Option 1, Option 2'
+							);
+						} else {
+							// We get all product fields at once, so skipped if products has been set
+							if ( isset( $body['Products /'] ) ) {
+								continue;
+							}
+
+							$body['Products /'] = self::get_products_array( $form, $entry );
+						}
+						break;
 				}
 			} else {
-				$key          = self::get_body_key( $body, $field_label );
-				$body[ $key ] = rgblank( $field_value ) ? '' : $field_value;
+				$key = self::get_body_key( $body, $field_label );
+
+				switch ( $input_type ) {
+					case 'list' :
+
+						if ( $field->enableColumns ) {
+
+							// Keep for backwards compatibility
+							$body[ $key ] = $field_value;
+
+							// Add line-item support to list
+							$body[ $key . ' /' ] = maybe_unserialize( $field_value );
+
+						} else {
+
+							$body[ $key ] = maybe_unserialize( $field_value );
+
+						}
+
+						break;
+
+					default :
+						if ( $field->type == 'product' ) {
+							if ( $use_sample_value ) {
+								list( $name, $price ) = explode( '|', $field_value );
+								$quantity = rand( 1, 10 );
+
+								$body['Products /'][] = array(
+									'product_id'                 => $field->id,
+									'product_name'               => $name,
+									'product_quantity'           => $quantity,
+									'product_price'              => $price,
+									'product_price_with_options' => $price + 10 + 20,
+									'product_subtotal'           => ( $price + 10 + 20 ) * $quantity,
+									'product_options'            => 'Option 1, Option 2'
+								);
+							} else {
+								// We get all product fields at once, so skipped if products has been set
+								if ( isset( $body['Products /'] ) ) {
+									continue;
+								}
+
+								$body['Products /'] = self::get_products_array( $form, $entry );
+							}
+						} elseif ( $field->type == 'shipping' ) {
+							// Keep old shipping value for backward compatibility.
+							$body[ $key ] = rgblank( $field_value ) ? '' : $field_value;
+
+							// Set shipping as a faux product
+							if ( $use_sample_value ) {
+								if ( $field->get_input_type() !== 'singleshipping' ) {
+									list( $name, $price ) = explode( '|', $field_value );
+									$name = 'Shipping (' . $name . ')';
+								} else {
+									$name  = 'Shipping';
+									$price = $field_value;
+								}
+								$body['Products /'][] = array(
+									'product_id'                 => $field->id,
+									'product_name'               => $name,
+									'product_quantity'           => 1,
+									'product_price'              => $price,
+									'product_price_with_options' => $price,
+									'product_subtotal'           => $price,
+									'product_options'            => '',
+								);
+							}
+						} else {
+							$body[ $key ] = rgblank( $field_value ) ? '' : $field_value;
+						}
+				}
 			}
 		}
 
@@ -845,7 +974,7 @@ class GFZapier {
 
 			case 'calculation' :
 				$value[ $field_id . '.1' ] = $field->label;
-				$value[ $field_id . '.2' ] = GFCommon::to_money( 10 );
+				$value[ $field_id . '.2' ] = 10;
 				$value[ $field_id . '.3' ] = 2;
 				break;
 
@@ -907,9 +1036,12 @@ class GFZapier {
 				break;
 
 			case 'number' :
-			case 'price' :
 			case 'total' :
 				$value = 100;
+				break;
+
+			case 'price' :
+				$value = $field->label . '|10';
 				break;
 
 			case 'phone' :
@@ -926,12 +1058,12 @@ class GFZapier {
 			case 'hiddenproduct' :
 			case 'singleproduct' :
 				$value[ $field_id . '.1' ] = $field->label;
-				$value[ $field_id . '.2' ] = empty( $field->basePrice ) ? 10 : $field->basePrice;
+				$value[ $field_id . '.2' ] = empty( $field->basePrice ) ? 10 : GFCommon::to_number( $field->basePrice );
 				$value[ $field_id . '.3' ] = 2;
 				break;
 
 			case 'singleshipping' :
-				$value = empty( $field->basePrice ) ? 10 : $field->basePrice;
+				$value = empty( $field->basePrice ) ? 10 : GFCommon::to_number( $field->basePrice );
 				break;
 
 			case 'time' :
@@ -977,7 +1109,7 @@ class GFZapier {
 							$value[ $input['id'] ] = $default_value;
 						}
 					}
-				} elseif ( is_array( $field->choices ) ) {
+				} elseif ( is_array( $field->choices ) && count( $field->choices ) > 0 ) {
 					$value = self::get_random_choice( $field->choices, $choice_type, $field->enablePrice );
 				} else {
 					$value = $default_value;
@@ -1007,6 +1139,63 @@ class GFZapier {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Return the product fields in the entry as an array.
+	 *
+	 * @param array $form The Form Object.
+	 * @param array $entry The Entry Object.
+	 *
+	 * @return array
+	 */
+	public static function get_products_array( $form, $entry ) {
+		$product_info = GFCommon::get_product_fields( $form, $entry );
+		$products     = array_values( $product_info['products'] );
+		$product_ids  = array_keys( $product_info['products'] );
+		foreach ( $products as $key => $product ) {
+			$products[ $key ]['product_id']   = $product_ids[ $key ];
+			$products[ $key ]['product_name'] = $product['name'];
+			unset( $products[ $key ]['name'] );
+			$products[ $key ]['product_quantity'] = intval( $product['quantity'] );
+			unset( $products[ $key ]['quantity'] );
+
+			// Change price to "product price" to be more clear when displaying in Zapier
+			$products[ $key ]['product_price'] = GFCommon::to_number( $product['price'], $entry['currency'] );
+			unset( $products[ $key ]['price'] );
+
+			$options = rgar( $product, 'options' );
+			// Add unit price
+			$products[ $key ]['product_price_with_options'] = GFCommon::to_number( $product['price'], $entry['currency'] );
+			if ( is_array( $options ) && ! empty( $options ) ) {
+				foreach ( $options as $option ) {
+					$products[ $key ]['product_price_with_options'] += GFCommon::to_number( $option['price'], $entry['currency'] );
+				}
+			}
+
+			// Add subtotal to product array
+			$products[ $key ]['product_subtotal'] = $products[ $key ]['product_price_with_options'] * $products[ $key ]['product_quantity'];
+
+			// Turn options into product_options
+			unset( $products[ $key ]['options'] );
+			$products[ $key ]['product_options'] = ( empty( $options ) ) ? '' : implode( ', ', wp_list_pluck( $options, 'option_name' ) );
+		}
+
+		$shipping_field = GFAPI::get_fields_by_type( $form, array( 'shipping' ) );
+		if ( ! empty( $shipping_field ) ) {
+			// Set shipping as a faux product
+			$products[] = array(
+				'product_id'                 => $product_info['shipping']['id'],
+				'product_name'               => $product_info['shipping']['name'],
+				'product_quantity'           => 1,
+				'product_price'              => $product_info['shipping']['price'],
+				'product_price_with_options' => $product_info['shipping']['price'],
+				'product_subtotal'           => $product_info['shipping']['price'],
+				'product_options'            => ''
+			);
+		}
+
+		return $products;
 	}
 
 	/**
@@ -1129,21 +1318,24 @@ class GFZapier {
 			}
 		</style>
 		<p style="text-align: left;">
-			<?php echo sprintf( __( 'Zapier is a service to which you may submit your form data so that information may be passed along to another online service. If you do not have a Zapier account, you may %ssign up for one here%s.', 'gravityformszapier' ), "<a href='https://zapier.com/app/signup' target='_blank'>", "</a>" ) ?>
+			<?php echo sprintf( __( 'Zapier is a service to which you may submit your form data so that information may be passed along to another online service. If you do not have a Zapier account, you may %ssign up for one here%s.', 'gravityformszapier' ), "<a href='https://zapier.com/app/signup' target='_blank'>", '</a>' ) ?>
 		</p>
 		<br/></br>
 		<form action="" method="post">
 			<?php wp_nonce_field( 'uninstall', 'gf_zapier_uninstall' ) ?>
 			<?php if ( GFCommon::current_user_can_any( 'gravityforms_zapier_uninstall' ) ) { ?>
-				<h3><?php _e( 'Uninstall Zapier Add-On', 'gravityformszapier' ) ?></h3>
+				<h3><?php esc_html_e( 'Uninstall Zapier Add-On', 'gravityformszapier' ) ?></h3>
 				<div class="delete-alert alert_red">
 					<h3><i class="fa fa-exclamation-triangle gf_invalid"></i> Warning</h3>
 
-					<div class="gf_delete_notice"
-					"=""><strong><?php _e( 'This operation deletes ALL Zapier feeds.', 'gravityformszapier' ) ?></strong><?php _e( 'If you continue, you will not be able to recover any Zapier data.', 'gravityformszapier' ) ?>
-				</div>
-				<input type="submit" name="uninstall" value="Uninstall Zapier Add-on" class="button"
-				       onclick="return confirm('<?php _e( "Warning! ALL Zapier settings will be deleted. This cannot be undone. \'OK\' to delete, \'Cancel\' to stop", 'gravityformszapier' ) ?>');">
+					<div class="gf_delete_notice">
+						<strong>
+							<?php esc_html_e( 'This operation deletes ALL Zapier feeds.', 'gravityformszapier' ) ?>
+						</strong>
+						<?php esc_html_e( 'If you continue, you will not be able to recover any Zapier data.', 'gravityformszapier' ) ?>
+					</div>
+					<input type="submit" name="uninstall" value="Uninstall Zapier Add-on" class="button"
+					       onclick="return confirm('<?php echo esc_js( __( "Warning! ALL Zapier settings will be deleted. This cannot be undone. \'OK\' to delete, \'Cancel\' to stop", 'gravityformszapier' ) ) ?>');">
 				</div>
 			<?php } ?>
 		</form>
@@ -1418,8 +1610,8 @@ class GFZapier {
 						'label'   => esc_html( 'Post Payment Actions', 'gravityforms' ),
 						'type'    => 'checkbox',
 						'choices' => array( $choice ),
-						'tooltip' => '<h6>' . esc_html__( 'Post Payment Actions', 'gravityforms' ) . '</h6>' . esc_html__( 'Select which actions should only occur after payment has been received.', 'gravityforms' )
-					)
+						'tooltip' => '<h6>' . esc_html__( 'Post Payment Actions', 'gravityforms' ) . '</h6>' . esc_html__( 'Select which actions should only occur after payment has been received.', 'gravityforms' ),
+					),
 				);
 
 				$feed_settings_fields = $paypal->add_field_after( 'options', $fields, $feed_settings_fields );
@@ -1467,7 +1659,7 @@ class GFZapier {
 			       value="1" <?php echo rgar( $feed_meta, "delay_$addon_name" ) ? "checked='checked'" : '' ?> />
 			<label class="inline" for="paypal_delay_<?php echo $addon_name; ?>">
 				<?php
-				_e( 'Send feed to Zapier only when payment is received.', 'gravityformszapier' );
+				esc_html_e( 'Send feed to Zapier only when payment is received.', 'gravityformszapier' );
 				?>
 			</label>
 		</li>
@@ -1624,8 +1816,8 @@ class GFZapier {
 
 		self::log_debug( 'Checking PayPal fulfillment for transaction ' . $transaction_id );
 		$is_fulfilled = gform_get_meta( $entry['id'], self::$slug . '_is_fulfilled' );
-		if ( $is_fulfilled ) {
-			self::log_debug( 'Entry ' . $entry['id'] . ' is already fulfilled for ' . self::$slug . '. No action necessary.' );
+		if ( $is_fulfilled || ! self::is_delayed( $feed ) ) {
+			self::log_debug( 'Entry ' . $entry['id'] . ' is already fulfilled or feeds are not delayed. No action necessary.' );
 
 			return false;
 		}
@@ -1646,6 +1838,43 @@ class GFZapier {
 		}
 	}
 	//end of functions to use for PayPal delay
+
+	/**
+	 * Include the add-on table in the Gravity Forms 2.2+ system report.
+	 *
+	 * @since 2.1.2
+	 *
+	 * @param array $system_report
+	 *
+	 * @return array
+	 */
+	public static function system_report( $system_report ) {
+
+		foreach ( $system_report as &$section ) {
+			if ( rgar( $section, 'title_export' ) === 'Gravity Forms Environment' && is_array( rgar( $section, 'tables' ) ) ) {
+				foreach ( $section['tables'] as &$table ) {
+					if ( rgar( $table, 'title_export' ) !== 'Database' ) {
+						continue;
+					}
+
+					$table_name   = GFZapierData::get_zapier_table_name();
+					$table_exists = GFCommon::table_exists( $table_name );
+
+					$table['items'][] = array(
+						'label'                     => $table_name,
+						'value'                     => '',
+						'is_valid'                  => $table_exists,
+						'validation_message'        => $table_exists ? '' : __( 'Table does not exist', 'gravityformszapier' ),
+						'validation_message_export' => $table_exists ? '' : 'Table does not exist',
+					);
+
+					return $system_report;
+				}
+			}
+		}
+
+		return $system_report;
+	}
 
 }
 
@@ -1731,7 +1960,7 @@ class GFZapierTable extends WP_List_Table {
 	}
 
 	function column_name( $item ) {
-		$edit_url = add_query_arg( array( 'zid' => $item['id'] ) );
+		$edit_url = add_query_arg( array( 'zid' => absint( $item['id'] ) ) );
 		/**
 		 * A filter to allow modification of Zapier Feed actions (Delete a feed and edit).
 		 *
