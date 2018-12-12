@@ -1,6 +1,11 @@
+# 3.1 | 2018-10-22
+	- Added the "gform_zapier_products" filter.
+	- Updated data sent to Zapier to include extra entry properties and the form ID.
+	- Fixed missing product fields.
+
 # 3.0 | 2018-05-07
 	- Added line item support for list field and product fields.
-	
+
 # 2.1.7 | 2018-03-20
 	- Fixed issue when trying to get random choices on an empty array
 
@@ -57,7 +62,7 @@
 
 # 1.8 | 2015-08-18
    - Added the 'gform_zapier_feed_conditional_logic' filter enabling the feed conditional logic rule to be overridden during submission, allowing multiple rules to be defined.
-   
+
 
 # 1.7 | 2015-04-20
    - Added text domain/path to header.
