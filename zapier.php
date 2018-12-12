@@ -4,7 +4,7 @@
 Plugin Name: Gravity Forms Zapier Add-on
 Plugin URI: https://www.gravityforms.com
 Description: Integrates Gravity Forms with Zapier, allowing form submissions to be automatically sent to your configured Zaps.
-Version: 3.0
+Version: 3.1
 Author: rocketgenius
 Author URI: https://www.rocketgenius.com
 License: GPL-2.0+
@@ -37,7 +37,7 @@ class GFZapier {
 	private static $slug = 'gravityformszapier';
 	private static $path = 'gravityformszapier/zapier.php';
 	private static $url = 'https://www.gravityforms.com';
-	private static $version = '3.0';
+	private static $version = '3.1';
 	private static $min_gravityforms_version = '1.9.10';
 
 	private static $_current_body = null;
@@ -745,7 +745,8 @@ class GFZapier {
 		$use_sample_value = empty( $entry );
 		$body             = array();
 
-		$body[ esc_html__( 'Form Title', 'gravityforms' ) ] = rgar( $form, 'title' );
+		$body[ esc_html__( 'Form ID', 'gravityformszapier' ) ]    = rgar( $form, 'id' );
+		$body[ esc_html__( 'Form Title', 'gravityformszapier' ) ] = rgar( $form, 'title' );
 
 		$entry_properties = self::get_entry_properties();
 		foreach ( $entry_properties as $property_key => $property_config ) {
@@ -755,7 +756,7 @@ class GFZapier {
 				$value = $property_config['sample_value'];
 			} else {
 				$value = rgar( $entry, $property_key );
-				if ( $property_key == 'date_created' ) {
+				if ( $property_key == 'date_created' || $property_key == 'payment_date' ) {
 					$value = GFCommon::format_date( $value, false );
 				}
 			}
@@ -878,6 +879,9 @@ class GFZapier {
 
 					default :
 						if ( $field->type == 'product' ) {
+							// Keep for backwards compatibility
+							$body[ $key ] = $field_value;
+
 							if ( $use_sample_value ) {
 								list( $name, $price ) = explode( '|', $field_value );
 								$quantity = rand( 1, 10 );
@@ -1195,7 +1199,7 @@ class GFZapier {
 			);
 		}
 
-		return $products;
+		return apply_filters( 'gform_zapier_products', $products, $form, $entry );
 	}
 
 	/**
@@ -1259,21 +1263,49 @@ class GFZapier {
 	 */
 	public static function get_entry_properties() {
 		return array(
-			'id'           => array(
+			'id'             => array(
 				'label'        => esc_html__( 'Entry ID', 'gravityforms' ),
 				'sample_value' => 0,
 			),
-			'date_created' => array(
+			'date_created'   => array(
 				'label'        => esc_html__( 'Entry Date', 'gravityforms' ),
 				'sample_value' => gmdate( 'Y-m-d H:i:s' ),
 			),
-			'ip'           => array(
+			'ip'             => array(
 				'label'        => esc_html__( 'User IP', 'gravityforms' ),
 				'sample_value' => GFFormsModel::get_ip(),
 			),
-			'source_url'   => array(
+			'source_url'     => array(
 				'label'        => esc_html__( 'Source Url', 'gravityforms' ),
 				'sample_value' => RGFormsModel::get_current_page_url(),
+			),
+			'created_by'     => array(
+				'label'        => esc_html__( 'Created By', 'gravityforms' ),
+				'sample_value' => 1,
+			),
+			'transaction_id' => array(
+				'label'        => esc_html__( 'Transaction Id', 'gravityforms' ),
+				'sample_value' => '1234567890',
+			),
+			'payment_amount' => array(
+				'label'        => esc_html__( 'Payment Amount', 'gravityforms' ),
+				'sample_value' => 100,
+			),
+			'payment_date'   => array(
+				'label'        => esc_html__( 'Payment Date', 'gravityforms' ),
+				'sample_value' => gmdate( 'Y-m-d H:i:s' ),
+			),
+			'payment_status' => array(
+				'label'        => esc_html__( 'Payment Status', 'gravityforms' ),
+				'sample_value' => 'Paid',
+			),
+			'post_id'        => array(
+				'label'        => esc_html__( 'Post Id', 'gravityforms' ),
+				'sample_value' => 1,
+			),
+			'user_agent'     => array(
+				'label'        => esc_html__( 'User Agent', 'gravityforms' ),
+				'sample_value' => sanitize_text_field( substr( $_SERVER['HTTP_USER_AGENT'], 0, 250 ) ),
 			),
 		);
 	}

@@ -1,0 +1,9 @@
+{
+    "name": "wp-premium/gravityformszapier",
+    "type": "wordpress-plugin",
+    "autoload": {
+        "classmap": [
+            "."
+        ]
+    }
+}
