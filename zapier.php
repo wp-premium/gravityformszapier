@@ -4,7 +4,7 @@
 Plugin Name: Gravity Forms Zapier Add-on
 Plugin URI: https://www.gravityforms.com
 Description: Integrates Gravity Forms with Zapier, allowing form submissions to be automatically sent to your configured Zaps.
-Version: 3.1
+Version: 3.2
 Author: rocketgenius
 Author URI: https://www.rocketgenius.com
 License: GPL-2.0+
@@ -12,7 +12,7 @@ Text Domain: gravityformszapier
 Domain Path: /languages
 
 ------------------------------------------------------------------------
-Copyright 2009-2016 rocketgenius
+Copyright 2009-2019 rocketgenius
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+defined( 'ABSPATH' ) || die();
+
 add_action( 'init', array( 'GFZapier', 'init' ) );
 
 class GFZapier {
@@ -37,10 +39,17 @@ class GFZapier {
 	private static $slug = 'gravityformszapier';
 	private static $path = 'gravityformszapier/zapier.php';
 	private static $url = 'https://www.gravityforms.com';
-	private static $version = '3.1';
+	private static $version = '3.2';
 	private static $min_gravityforms_version = '1.9.10';
 
 	private static $_current_body = null;
+
+	/**
+	 * If true, maybe_delay_feed() checks will be bypassed allowing the feeds to be processed.
+	 *
+	 * @var bool
+	 */
+	protected static $_bypass_feed_delay = false;
 
 	public static function init() {
 
@@ -80,9 +89,9 @@ class GFZapier {
 
 			// paypal standard plugin integration hooks
 			if ( self::is_gravityforms_supported( '2.0-beta-2' ) ) {
-				add_filter( 'gform_gravityformspaypal_feed_settings_fields', array(
+				add_filter( 'gform_addon_feed_settings_fields', array(
 					'GFZapier',
-					'add_paypal_post_payment_actions',
+					'add_post_payment_actions',
 				), 10, 2 );
 			} else {
 				add_action( 'gform_paypal_action_fields', array( 'GFZapier', 'add_paypal_settings' ), 10, 2 );
@@ -140,8 +149,10 @@ class GFZapier {
 
 		add_action( 'gform_after_submission', array( 'GFZapier', 'send_form_data_to_zapier' ), 10, 2 );
 
-		//handling paypal fulfillment
+		// handling paypal fulfillment.
 		add_action( 'gform_paypal_fulfillment', array( 'GFZapier', 'paypal_fulfillment' ), 10, 4 );
+		// handling fulfillment in other payment addons.
+		add_action( 'gform_trigger_payment_delayed_feeds', array( 'GFZapier', 'action_trigger_payment_delayed_feeds' ), 10, 4 );
 	}
 
 	public static function add_form_settings_menu( $tabs ) {
@@ -646,28 +657,34 @@ class GFZapier {
 	 * @param array $form The Form Object currently being processed.
 	 *
 	 * @since 2.0.2
+	 * @since 3.1.5 Updated to support all payment addons.
 	 *
 	 * @return bool
 	 */
 	public static function maybe_delay_feed( $entry, $form ) {
+		if ( self::$_bypass_feed_delay ) {
+			return false;
+		}
+
 		$is_delayed = false;
 		$slug       = self::$slug;
 
-		// See if there is a paypal feed and zapier is set to be delayed until payment is received.
-		if ( class_exists( 'GFPayPal' ) ) {
-			$paypal_feeds = self::get_paypal_feeds( $form['id'] );
-			// Loop through paypal feeds to get active one for this form submission, needed to see if add-on processing should be delayed.
-			foreach ( $paypal_feeds as $paypal_feed ) {
-				if ( $paypal_feed['is_active'] && self::is_feed_condition_met( $paypal_feed, $form, $entry ) ) {
-					$active_paypal_feed = $paypal_feed;
-					break;
+		// Backwards compatibility for GF core < 2.4.13.
+		if ( ! method_exists( 'GFPaymentAddOn', 'maybe_delay_feed_processing' ) ) {
+			// See if there is a paypal feed and zapier is set to be delayed until payment is received.
+			if ( class_exists( 'GFPayPal' ) ) {
+				$paypal_feeds = self::get_paypal_feeds( $form['id'] );
+				// Loop through paypal feeds to get active one for this form submission, needed to see if add-on processing should be delayed.
+				foreach ( $paypal_feeds as $paypal_feed ) {
+					if ( $paypal_feed['is_active'] && self::is_feed_condition_met( $paypal_feed, $form, $entry ) ) {
+						$active_paypal_feed = $paypal_feed;
+						break;
+					}
 				}
-			}
-
-			$is_fulfilled = rgar( $entry, 'is_fulfilled' );
-
-			if ( ! empty( $active_paypal_feed ) && self::is_delayed( $active_paypal_feed ) && self::has_paypal_payment( $active_paypal_feed, $form, $entry ) && ! $is_fulfilled ) {
-				$is_delayed = true;
+				$is_fulfilled = rgar( $entry, 'is_fulfilled' );
+				if ( ! empty( $active_paypal_feed ) && self::is_delayed( $active_paypal_feed ) && self::has_paypal_payment( $active_paypal_feed, $form, $entry ) && ! $is_fulfilled ) {
+					$is_delayed = true;
+				}
 			}
 		}
 
@@ -687,6 +704,18 @@ class GFZapier {
 
 	public static function process_feed( $feed, $entry, $form ) {
 		$body = self::get_body( $entry, $form, $feed );
+
+		/**
+		 * Allows the request body sent to zapier to be filtered
+		 *
+		 * @param array $body An associative array containing the request body that will be sent to Zapier.
+		 * @param array $feed The Feed Object currently being processed.
+		 * @param array $entry The Entry Object currently being processed.
+		 * @param array $form The Form Object currently being processed.
+		 *
+		 * @since 3.1.1
+		 */
+		$body = gf_apply_filters( array( 'gform_zapier_request_body', $form['id'] ), $body, $feed, $entry, $form );
 
 		$headers = array();
 		if ( empty( $entry ) ) {
@@ -735,10 +764,10 @@ class GFZapier {
 		 */
 		if ( apply_filters( 'gform_zapier_use_stored_body', true, $entry, $form, $feed ) ) {
 			$current_body = self::$_current_body;
-		}
 
-		if ( is_array( $current_body ) ) {
-			return $current_body;
+			if ( is_array( $current_body ) ) {
+				return $current_body;
+			}
 		}
 
 		$adminLabels      = is_array( $feed ) ? rgars( $feed, 'meta/adminLabels' ) : false;
@@ -848,7 +877,7 @@ class GFZapier {
 						} else {
 							// We get all product fields at once, so skipped if products has been set
 							if ( isset( $body['Products /'] ) ) {
-								continue;
+								break;
 							}
 
 							$body['Products /'] = self::get_products_array( $form, $entry );
@@ -898,7 +927,7 @@ class GFZapier {
 							} else {
 								// We get all product fields at once, so skipped if products has been set
 								if ( isset( $body['Products /'] ) ) {
-									continue;
+									break;
 								}
 
 								$body['Products /'] = self::get_products_array( $form, $entry );
@@ -1185,8 +1214,7 @@ class GFZapier {
 			$products[ $key ]['product_options'] = ( empty( $options ) ) ? '' : implode( ', ', wp_list_pluck( $options, 'option_name' ) );
 		}
 
-		$shipping_field = GFAPI::get_fields_by_type( $form, array( 'shipping' ) );
-		if ( ! empty( $shipping_field ) ) {
+		if ( ! empty( $product_info['shipping']['id'] ) ) {
 			// Set shipping as a faux product
 			$products[] = array(
 				'product_id'                 => $product_info['shipping']['id'],
@@ -1614,17 +1642,36 @@ class GFZapier {
 	/**
 	 * Add the Post Payment Actions setting to the PayPal feed.
 	 *
-	 * @param array $feed_settings_fields The PayPal feed settings.
+	 * @param array   $feed_settings_fields The PayPal feed settings.
+	 * @param GFAddOn $addon                The current instance of the add-on (i.e. GF_User_Registration, GFPayPal).
 	 *
 	 * @since 1.8.1
+	 * @since 3.1.5 Support all payment addon.
 	 *
 	 * @return array
 	 */
-	public static function add_paypal_post_payment_actions( $feed_settings_fields, $paypal ) {
+	public static function add_post_payment_actions( $feed_settings_fields, $addon ) {
+		if ( ! $addon instanceof GFPaymentAddOn ) {
+			return $feed_settings_fields;
+		}
 
 		$form_id = absint( rgget( 'id' ) );
 		$feeds   = GFZapierData::get_feed_by_form( $form_id, true );
 		if ( count( $feeds ) > 0 ) {
+			$config = array();
+
+			if ( method_exists( $addon, 'get_post_payment_actions_config' ) ) {
+				$config = $addon->get_post_payment_actions_config( self::$slug );
+			} elseif ( $addon instanceof GFPayPal ) {
+				$config = array(
+					'position' => 'after',
+					'setting'  => 'options',
+				);
+			}
+
+			if ( empty( $config ) ) {
+				return $feed_settings_fields;
+			}
 
 			$choice = array(
 				'label' => esc_html__( 'Send feed to Zapier only when payment is received.', 'gravityformszapier' ),
@@ -1632,26 +1679,30 @@ class GFZapier {
 			);
 
 			$field_name = 'post_payment_actions';
-			$field      = $paypal->get_field( $field_name, $feed_settings_fields );
+			$field      = $addon->get_field( $field_name, $feed_settings_fields );
 
 			if ( ! $field ) {
 
 				$fields = array(
 					array(
 						'name'    => $field_name,
-						'label'   => esc_html( 'Post Payment Actions', 'gravityforms' ),
+						'label'   => esc_html__( 'Post Payment Actions', 'gravityformszapier' ),
 						'type'    => 'checkbox',
 						'choices' => array( $choice ),
-						'tooltip' => '<h6>' . esc_html__( 'Post Payment Actions', 'gravityforms' ) . '</h6>' . esc_html__( 'Select which actions should only occur after payment has been received.', 'gravityforms' ),
+						'tooltip' => '<h6>' . esc_html__( 'Post Payment Actions', 'gravityforms' ) . '</h6>' . esc_html__( 'Select which actions should only occur after payment has been received.', 'gravityformszapier' ),
 					),
 				);
 
-				$feed_settings_fields = $paypal->add_field_after( 'options', $fields, $feed_settings_fields );
-
+				$setting = rgar( $config, 'setting', 'options' );
+				if ( rgar( $config, 'position' ) === 'before' ) {
+					$feed_settings_fields = $addon->add_field_before( $setting, $fields, $feed_settings_fields );
+				} else {
+					$feed_settings_fields = $addon->add_field_after( $setting, $fields, $feed_settings_fields );
+				}
 			} else {
 
 				$field['choices'][]   = $choice;
-				$feed_settings_fields = $paypal->replace_field( $field_name, $field, $feed_settings_fields );
+				$feed_settings_fields = $addon->replace_field( $field_name, $field, $feed_settings_fields );
 
 			}
 		}
@@ -1869,7 +1920,35 @@ class GFZapier {
 			}
 		}
 	}
-	//end of functions to use for PayPal delay
+
+	/**
+	 * Triggers processing of feeds delayed by payment add-ons.
+	 *
+	 * @since 3.1.5
+	 *
+	 * @param string     $transaction_id The transaction or subscription ID.
+	 * @param array      $payment_feed   The payment feed which originated the transaction.
+	 * @param array      $entry          The entry currently being processed.
+	 * @param null|array $form           The form currently being processed or null for the legacy PayPal integration.
+	 */
+	public static function action_trigger_payment_delayed_feeds( $transaction_id, $payment_feed, $entry, $form = null ) {
+		self::log_debug( __METHOD__ . '(): Checking fulfillment for transaction ' . $transaction_id . ' for ' . $payment_feed['addon_slug'] );
+
+		$is_fulfilled = gform_get_meta( $entry['id'], self::$slug . '_is_fulfilled' );
+		if ( $is_fulfilled || ! self::is_delayed( $payment_feed ) ) {
+			self::log_debug( __METHOD__ . '(): Entry ' . $entry['id'] . ' is already fulfilled or feeds are not delayed. No action necessary.' );
+
+			return;
+		}
+
+		if ( is_null( $form ) ) {
+			$form = GFFormsModel::get_form_meta( $entry['form_id'] );
+		}
+
+		self::$_bypass_feed_delay = true;
+		self::send_form_data_to_zapier( $entry, $form );
+	}
+	//end of functions to use for PayPal delay.
 
 	/**
 	 * Include the add-on table in the Gravity Forms 2.2+ system report.
