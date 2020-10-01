@@ -1,3 +1,8 @@
+### 3.3 | 2020-05-20
+- Added translations for Hebrew, Hindi, Japanese, and Turkish.
+- Fixed an issue where the entry and payment dates were being formatted before being sent to Zapier.
+
+
 ### 3.2 | 2019-09-25
 - Added support for triggering Zapier feeds after a successful delayed payment (we originally did it only for PayPal). This fixed an issue where feeds are triggered before payments received when using Stripe Checkout.
 - Added *[gform_zapier_request_body](https://docs.gravityforms.com/gform_zapier_request_body/)* filter to allow the request body sent to Zapier to be modified.

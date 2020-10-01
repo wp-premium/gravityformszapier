@@ -2,17 +2,17 @@
 
 /*
 Plugin Name: Gravity Forms Zapier Add-on
-Plugin URI: https://www.gravityforms.com
+Plugin URI: https://gravityforms.com
 Description: Integrates Gravity Forms with Zapier, allowing form submissions to be automatically sent to your configured Zaps.
-Version: 3.2
-Author: rocketgenius
-Author URI: https://www.rocketgenius.com
+Version: 3.3
+Author: Gravity Forms
+Author URI: https://gravityforms.com
 License: GPL-2.0+
 Text Domain: gravityformszapier
 Domain Path: /languages
 
 ------------------------------------------------------------------------
-Copyright 2009-2019 rocketgenius
+Copyright 2009-2020 Rocketgenius, Inc.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ class GFZapier {
 	private static $slug = 'gravityformszapier';
 	private static $path = 'gravityformszapier/zapier.php';
 	private static $url = 'https://www.gravityforms.com';
-	private static $version = '3.2';
+	private static $version = '3.3';
 	private static $min_gravityforms_version = '1.9.10';
 
 	private static $_current_body = null;
@@ -785,9 +785,6 @@ class GFZapier {
 				$value = $property_config['sample_value'];
 			} else {
 				$value = rgar( $entry, $property_key );
-				if ( $property_key == 'date_created' || $property_key == 'payment_date' ) {
-					$value = GFCommon::format_date( $value, false );
-				}
 			}
 
 			$body[ $key ] = $value;
